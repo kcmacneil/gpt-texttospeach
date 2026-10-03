@@ -8,3 +8,4 @@ out/
 *.wav
 npm-debug.log*
 .DS_Store
+*.log
