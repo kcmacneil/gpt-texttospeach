@@ -1,0 +1,99 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GPT Text to Speech",
+    "version": "1.0.0",
+    "description": "Convert text to speech (MP3) using the ElevenLabs 'Kevin Mac' voice. When the user asks to speak, say, read aloud, narrate, or convert text to speech using Kevin Mac, call generateSpeech to produce an MP3 from the supplied text and return its audio URL."
+  },
+  "servers": [
+    {
+      "url": "https://gpt-texttospeach.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/generate-speech": {
+      "post": {
+        "operationId": "generateSpeech",
+        "summary": "Generate an MP3 of text spoken in the Kevin Mac voice",
+        "description": "Converts the supplied text into spoken audio (MP3) using the ElevenLabs 'Kevin Mac' voice and returns a temporary signed URL where the MP3 can be played or downloaded. Use this whenever the user asks to say, speak, narrate, read aloud, or convert text to speech with Kevin Mac.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "The text to convert to speech (max 5,000 characters).",
+                    "example": "Blablabla",
+                    "maxLength": 5000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Speech generation request accepted. The audio_url serves the MP3.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "voice": { "type": "string", "example": "Kevin Mac" },
+                    "voice_id": {
+                      "type": "string",
+                      "example": "SZoOD4blOn3AcaCWHdwZ"
+                    },
+                    "audio_url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "Temporary signed URL that returns the MP3 (audio/mpeg). Share this link with the user so they can play or download the audio."
+                    },
+                    "audio_format": { "type": "string", "example": "mp3" },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expires_in": {
+                      "type": "integer",
+                      "description": "Seconds until the audio_url expires."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request (missing or too-long text)."
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          },
+          "429": {
+            "description": "Rate limit exceeded."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key required for external access. Send as 'Authorization: Bearer <TTS_API_KEY>'."
+      }
+    }
+  }
+}

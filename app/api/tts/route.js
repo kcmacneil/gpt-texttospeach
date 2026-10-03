@@ -1,8 +1,36 @@
-const VOICE_ID = "SZoOD4blOn3AcaCWHdwZ"; // Kevin Mac
-const MODEL_ID = "eleven_v3";
-const MAX_CHARS = 5000;
+import {
+  audioResponse,
+  clientIp,
+  generateSpeech,
+  rateLimitOk,
+  validateText,
+} from "../../../lib/eleven";
+
+// Browser UI endpoint. Not a public API: same-origin requests only, so
+// external tools must use POST /api/generate-speech with Bearer auth.
+function isSameOrigin(request) {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite) return fetchSite === "same-origin" || fetchSite === "none";
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  try {
+    return new URL(origin).host === request.headers.get("host");
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(request) {
+  if (!isSameOrigin(request)) {
+    return Response.json({ error: "Forbidden." }, { status: 403 });
+  }
+  if (!rateLimitOk(`ui:${clientIp(request)}`)) {
+    return Response.json(
+      { error: "Too many requests. Please wait a moment." },
+      { status: 429 }
+    );
+  }
+
   let text;
   try {
     const body = await request.json();
@@ -11,72 +39,12 @@ export async function POST(request) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  if (!text) {
-    return Response.json({ error: "Text is required." }, { status: 400 });
-  }
-  if (text.length > MAX_CHARS) {
-    return Response.json(
-      { error: `Text must be ${MAX_CHARS} characters or fewer.` },
-      { status: 400 }
-    );
-  }
+  const invalid = validateText(text);
+  if (invalid) return Response.json({ error: invalid }, { status: 400 });
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    return Response.json(
-      { error: "Text-to-speech service is not configured." },
-      { status: 500 }
-    );
+  const result = await generateSpeech(text);
+  if (result.error) {
+    return Response.json({ error: result.error }, { status: result.status });
   }
-
-  let upstream;
-  try {
-    upstream = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text,
-          model_id: MODEL_ID,
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            use_speaker_boost: true,
-          },
-        }),
-      }
-    );
-  } catch {
-    return Response.json(
-      { error: "Could not reach the speech service. Please try again." },
-      { status: 502 }
-    );
-  }
-
-  if (!upstream.ok) {
-    const detail = await upstream.text().catch(() => "");
-    console.error(
-      "ElevenLabs request failed:",
-      upstream.status,
-      detail.slice(0, 500)
-    );
-    return Response.json(
-      { error: "Speech generation failed. Please try again." },
-      { status: 502 }
-    );
-  }
-
-  const audio = await upstream.arrayBuffer();
-  return new Response(audio, {
-    status: 200,
-    headers: {
-      "Content-Type": "audio/mpeg",
-      "Content-Length": String(audio.byteLength),
-      "Cache-Control": "no-store",
-    },
-  });
+  return audioResponse(result.audio);
 }
