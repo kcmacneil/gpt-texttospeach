@@ -25,6 +25,7 @@ Push to `main`; Vercel builds and deploys automatically.
 | `POST /api/generate-speech` | `Authorization: Bearer <TTS_API_KEY>` | External API for AI agents — returns JSON with a signed `audio_url` (expires in 1 h) |
 | `GET /api/audio?d&e&s` | HMAC signature | Serves the MP3 for URLs issued by `/api/generate-speech` (stateless — regenerates on demand, no storage) |
 | `GET /api/health` | none | `{"status":"ok","service":"gpt-texttospeach","voice":"Kevin Mac"}` |
+| `POST /api/mcp` | `Authorization: Bearer <TTS_API_KEY>` | Remote MCP endpoint (Streamable HTTP) exposing the `generateSpeech` tool for AI clients such as ChatGPT |
 | `GET /openapi.json` | none | OpenAPI 3.1 spec for the external API (`operationId: generateSpeech`) |
 
 ### Environment variables
@@ -55,6 +56,23 @@ Response:
   "expires_in": 3600
 }
 ```
+
+### MCP client config
+
+```json
+{
+  "mcpServers": {
+    "kevinsay": {
+      "url": "https://gpt-texttospeach.vercel.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer <TTS_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+`test-mcp.mjs` exercises the endpoint end-to-end (`node test-mcp.mjs`, with `MCP_URL`/`TTS_API_KEY` env overrides).
 
 ### ChatGPT (GPT Action)
 
