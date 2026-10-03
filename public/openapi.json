@@ -26,17 +26,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": ["text"],
-                "properties": {
-                  "text": {
-                    "type": "string",
-                    "description": "The text to convert to speech (max 5,000 characters).",
-                    "example": "Blablabla",
-                    "maxLength": 5000
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/GenerateSpeechRequest"
               }
             }
           }
@@ -47,29 +37,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "voice": { "type": "string", "example": "Kevin Mac" },
-                    "voice_id": {
-                      "type": "string",
-                      "example": "SZoOD4blOn3AcaCWHdwZ"
-                    },
-                    "audio_url": {
-                      "type": "string",
-                      "format": "uri",
-                      "description": "Temporary signed URL that returns the MP3 (audio/mpeg). Share this link with the user so they can play or download the audio."
-                    },
-                    "audio_format": { "type": "string", "example": "mp3" },
-                    "expires_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "expires_in": {
-                      "type": "integer",
-                      "description": "Seconds until the audio_url expires."
-                    }
-                  }
+                  "$ref": "#/components/schemas/GenerateSpeechResponse"
                 }
               }
             }
@@ -88,6 +56,50 @@
     }
   },
   "components": {
+    "schemas": {
+      "GenerateSpeechRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The text to convert to speech (max 5,000 characters).",
+            "example": "Blablabla",
+            "maxLength": 5000
+          }
+        },
+        "additionalProperties": false
+      },
+      "GenerateSpeechResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "voice": { "type": "string", "example": "Kevin Mac" },
+          "voice_id": {
+            "type": "string",
+            "example": "SZoOD4blOn3AcaCWHdwZ"
+          },
+          "audio_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Temporary signed URL that returns the MP3 (audio/mpeg). Share this link with the user so they can play or download the audio."
+          },
+          "audio_format": { "type": "string", "example": "mp3" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "expires_in": {
+            "type": "integer",
+            "description": "Seconds until the audio_url expires.",
+            "example": 3600
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
