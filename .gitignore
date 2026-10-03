@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+.env
+.env.*
+!.env.example
+*.mp3
+*.wav
+npm-debug.log*
+.DS_Store
